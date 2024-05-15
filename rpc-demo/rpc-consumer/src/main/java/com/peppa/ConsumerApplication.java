@@ -2,12 +2,15 @@ package com.peppa;
 
 import com.peppa.api.Hello;
 import com.peppa.discovery.RegistryConfig;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author peppa
  * @time 2024-05-14 星期二 14:33
  */
+@Slf4j
 public class ConsumerApplication {
+
     public static void main(String[] args) {
         // 想尽一切办法获取代理对象,使用ReferenceConfig进行封装
         // reference一定有生成代理的模板方法，get()
@@ -25,7 +28,7 @@ public class ConsumerApplication {
                 .reference(reference);
 
         Hello hello = reference.get();
-        hello.sayHello("peppa");
-
+        String sayHi = hello.sayHello("peppa");
+        log.info("sayHi:{}", sayHi);
     }
 }
