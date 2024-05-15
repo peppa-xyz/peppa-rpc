@@ -5,6 +5,8 @@ import com.peppa.RpcBootstrap;
 import com.peppa.discovery.Registry;
 import com.peppa.exceptions.DiscoveryException;
 import com.peppa.exceptions.NetworkException;
+import com.peppa.transport.message.RequestPayload;
+import com.peppa.transport.message.RpcRequest;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -96,6 +98,22 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
         }
 
         // 3. 封装报文
+        RequestPayload requestPayload = RequestPayload.builder()
+                .interfaceName(interfaceRef.getName())
+                .methodName(method.getName())
+                .parametersType(method.getParameterTypes())
+                .parametersValue(args)
+                .returnType(method.getReturnType())
+                .build();
+
+        // todo 需要对请求id和各种类型做处理
+        RpcRequest rpcRequest = RpcRequest.builder()
+                .requestId(1L)
+                .compressType((byte) 1)
+                .requestType((byte) 1)
+                .serializeType((byte) 1)
+                .requestPayload(requestPayload)
+                .build();
 
 
         // 4. 将报文写出后，异步获取返回结果
@@ -103,7 +121,9 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
         //  completableFuture 暴露出去
         RpcBootstrap.PENDING_REQUEST.put(1L, completableFuture);
 
-        channel.writeAndFlush(Unpooled.copiedBuffer("hello".getBytes())).addListener((ChannelFutureListener) promise -> {
+        // 这里这几 writeAndFlush 写出一个请求，这个请求的实例就会进入pipeline执行出站的一系列操作
+        // 我们可以想象得到，第一个出站程序一定是将 rpcRequest --> 二进制的报文
+        channel.writeAndFlush(rpcRequest).addListener((ChannelFutureListener) promise -> {
             // 当前的promise的返回结果是 writeAndFlush 的返回结果
             // 一旦数据被写出去，这个promise就结束了
             // 但是我们需要的是服务端给我们的返回值

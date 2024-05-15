@@ -1,7 +1,10 @@
 package com.peppa;
 
+import com.peppa.channelHandler.handler.MethodCallHandler;
+import com.peppa.channelHandler.handler.RpcMessageDecoder;
 import com.peppa.discovery.Registry;
 import com.peppa.discovery.RegistryConfig;
+import com.peppa.transport.message.RpcRequest;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -9,6 +12,8 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,7 +42,7 @@ public class RpcBootstrap {
 
 
     // 维护已经发布且暴露的服务列表 key-> interface的全限定名  value -> ServiceConfig
-    private final static Map<String, ServiceConfig<?>> SERVERS_LIST = new ConcurrentHashMap<>(16);
+    public final static Map<String, ServiceConfig<?>> SERVERS_LIST = new ConcurrentHashMap<>(16);
 
     // 定义全局对外挂起的 completableFuture
     public final static Map<Long, CompletableFuture<Object>> PENDING_REQUEST = new ConcurrentHashMap<>(128);
@@ -136,16 +141,10 @@ public class RpcBootstrap {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
-                            socketChannel.pipeline().addLast(new SimpleChannelInboundHandler<>() {
-
-                                @Override
-                                protected void channelRead0(ChannelHandlerContext channelHandlerContext, Object msg) throws Exception {
-                                    ByteBuf byteBuf = (ByteBuf) msg;
-                                    log.info("接收到请求，请求内容为:{}", byteBuf.toString(CharsetUtil.UTF_8));
-
-                                    channelHandlerContext.channel().writeAndFlush(Unpooled.copiedBuffer("rpc--hello".getBytes()));
-                                }
-                            });
+                            socketChannel.pipeline().addLast(new LoggingHandler(LogLevel.INFO))
+                                    .addLast(new RpcMessageDecoder())
+                                    // 根据请求进行方法调用
+                                    .addLast(new MethodCallHandler());
                         }
                     });
 
