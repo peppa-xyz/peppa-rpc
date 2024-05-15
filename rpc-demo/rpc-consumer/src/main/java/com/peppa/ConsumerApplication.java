@@ -22,23 +22,10 @@ public class ConsumerApplication {
         RpcBootstrap.getInstance()
                 .application("first-rpc-consumer")
                 .registry(new RegistryConfig("zookeeper://127.0.0.1:2181"))
-                .reference(reference)
-                .start()
+                .reference(reference);
 
-        System.out.println("++------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         Hello hello = reference.get();
+        hello.sayHello("peppa");
 
-        while (true) {
-//            try {
-//                Thread.sleep(10000);
-//                System.out.println("++------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-//            } catch (InterruptedException e) {
-//                throw new RuntimeException(e);
-//            }
-            for (int i = 0; i < 50; i++) {
-                String sayHi = hello.sayHello("你好yrpc");
-                log.info("sayHi-->{}", sayHi);
-            }
-        }
     }
 }

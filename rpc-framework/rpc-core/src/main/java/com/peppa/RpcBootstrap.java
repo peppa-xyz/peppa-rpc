@@ -85,7 +85,7 @@ public class RpcBootstrap {
 
         // 1、当服务调用方，通过接口、方法名、具体的方法参数列表发起调用，提供方怎么知道使用哪一个实现
         // (1) new 一个  （2）spring beanFactory.getBean(Class)  (3) 自己维护映射关系
-
+        SERVERS_LIST.put(service.getInterface().getName(), service);
         return this;
     }
 
@@ -107,7 +107,7 @@ public class RpcBootstrap {
      */
     public void start() {
         try {
-            Thread.sleep(1000);
+            Thread.sleep(100000000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -125,6 +125,9 @@ public class RpcBootstrap {
     public RpcBootstrap reference(ReferenceConfig<?> reference) {
         // 在这个方法里我们是否可以拿到相关的配置项-注册中心
         // 配置reference，将来调用get方法时，方便生成代理对象
+        // 1、获取注册中心
+        reference.setRegistry(registry);
+
         return this;
     }
 
